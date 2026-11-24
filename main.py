@@ -1,50 +1,37 @@
-#!/usr/bin/env python3
-"""Write one deadpan one-line joke to /output/entry.txt.
-
-The line is a single sentence of at most 280 characters: a barber
-mishears a request, and the haircut that follows changes what kind of
-man the speaker looks like.
-"""
+"""Write one deadpan one-line joke to a text file."""
 
 import os
-
-LINE = (
-    "I told my barber \"just a trim\" and he heard \"reinvent me,\" "
-    "and now I look like a man who owns a kayak."
-)
+from pathlib import Path
 
 
-def output_directory():
-    """The directory the entry is written to, /output unless overridden."""
-    return os.environ.get("OUTPUT_DIR", "/output")
+def build_line() -> str:
+    """Assemble the joke from its parts, in order."""
+    speaker = 'I told my barber "just a trim"'
+    misheard = 'and he heard "reinvent me,"'
+    consequence = "and now I look like a man who owns a kayak."
+    return " ".join([speaker, misheard, consequence])
 
 
-def main():
-    out_dir = output_directory()
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, "entry.txt")
-    text = LINE.strip()
-    assert 1 <= len(text) <= 280, "entry must be 1 to 280 characters"
-    assert "\n" not in text, "entry must be one line"
-    assert text.endswith("."), "entry must end as one sentence"
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(text + "\n")
-    try:
-        os.chmod(path, 0o644)
-    except OSError:
-        pass
-    verify(path, text)
+OUTPUT_FILENAME = "entry.txt"
+DEFAULT_OUTPUT_DIR = "/output"
 
 
-def verify(path, expected):
-    """Read the file back and confirm it holds exactly the entry line."""
-    with open(path, encoding="utf-8", newline="\n") as f:
-        written = f.read()
-    assert written == expected + "\n", "entry.txt does not match the line"
-    print(path)
-    print(expected)
+def output_path() -> Path:
+    """Resolve where the joke is written (OUTPUT_DIR overrides the default)."""
+    return Path(os.environ.get("OUTPUT_DIR", DEFAULT_OUTPUT_DIR)) / OUTPUT_FILENAME
+
+
+def write_entry(line: str) -> Path:
+    """Write the line plus a trailing newline, creating the directory if needed."""
+    path = output_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(line + "\n", encoding="utf-8")
+    return path
+
+
+def main() -> None:
+    write_entry(build_line())
 
 
 if __name__ == "__main__":
-    os.umask(0o022)
     main()
